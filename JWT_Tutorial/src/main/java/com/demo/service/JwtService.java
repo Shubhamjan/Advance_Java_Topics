@@ -1,11 +1,13 @@
 package com.demo.service;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -35,24 +37,29 @@ public class JwtService {
 
     public String getUsernameFromToken(String token){
 
-        return Jwts.parserBuilder()
+        String subject =  Jwts.parserBuilder()
                 .setSigningKey(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
                 .build()
-                .parseClaimsJwt(token)
+                .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
+        System.out.println("The suject is  "+subject);
+        return subject;
 
     }
 
-    public boolean validateToken(String token){
+    public boolean validateToken(String token, UserDetails userDetails){
 
         try{
 
-            Jwts.parserBuilder()
+            Claims claims = Jwts.parserBuilder()
                     .setSigningKey(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
                     .build()
-                    .parseClaimsJwt(token);
-            return true;
+                    .parseClaimsJws(token)
+                    .getBody();
+
+            String username = claims.getSubject();
+            return username.equals(userDetails.getUsername())&& claims.getExpiration().after(new Date());
         }catch (Exception e){
             return false;
         }
