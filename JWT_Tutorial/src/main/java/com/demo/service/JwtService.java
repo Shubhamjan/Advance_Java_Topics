@@ -10,6 +10,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 
 @Service
@@ -25,7 +27,7 @@ public class JwtService {
 
         Date now = new Date();
         Date expiryDate = new Date(now.getTime()+expiration);
-
+        System.out.println("The expiry time is "+expiryDate.toString());
         return Jwts.
                 builder()
                 .setSubject(authentication.getName())
@@ -65,4 +67,17 @@ public class JwtService {
         }
     }
 
+    public LocalDateTime extractExpiration(String token) {
+
+        Date expiration = Jwts.parserBuilder()
+                .setSigningKey(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getExpiration();
+
+        return expiration.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
+    }
 }
